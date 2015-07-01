@@ -254,7 +254,7 @@
               <Ocr1>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0xe00</Size>
+                <Size>0xf00</Size>
               </Ocr1>
               <Ocr2>
                 <Type>0</Type>

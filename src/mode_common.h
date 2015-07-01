@@ -77,7 +77,7 @@ void decode_str(u8* out_str,u8* out_str_len,u8* in_str,u8 in_str_len,DAB_DLS_ENC
 
 
 #define MAX_VOLUME		63
-#define VOLUME_STEP		2
+#define VOLUME_STEP		4
 
 
 

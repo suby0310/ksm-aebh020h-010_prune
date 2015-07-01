@@ -41,12 +41,12 @@ RETURN_CODE clock_initialize(void)
 	time_refresh_item = 0x7F;
 	time_sec_flag = 1;
 	time_dot_flag = 1;
-	time.sec = 1;
-	time.min = 30;
-	time.hour = 12 ;
-	time.day = 13;
-	time.week= 3;
-	time.month=5;
+	time.sec = 7;
+	time.min = 55;
+	time.hour = 5;
+	time.day = 29;
+	time.week = 1;
+	time.month = 6;
 	time.year = 115;
 	
 	select_item = 0;
@@ -1507,34 +1507,26 @@ RETURN_CODE menu_work_mode(void)
 #ifndef OPTION__OPERATE_AS_SLAVE_NO_MMI
 RETURN_CODE volume_work_mode(void)
 {
-	u8 i, vol_value;
+	u8 i;
 	RETURN_CODE ret = SUCCESS;
-
-	vol_value=(volume+1)/VOLUME_STEP;
-	
 	if(display_refresh_flag)
 	{
 		display_refresh_flag = 0;
-		LCD_Clear(LCD_CLEAR_LINE1);
+		LCD_Clear(LCD_CLEAR_ALL);	
 		LCD_DisplayStr("Volume:\n",0,0);
-		LCD_DisplayNum(vol_value,13,0);
+		LCD_DisplayNum(((volume+1)/VOLUME_STEP),13,0);
 
-		LCD_Clear(LCD_CLEAR_LINE2);
-		for(i=0;i<32;i++)
+		for(i=0;i<16;i++)
 		{	
-			if(vol_value>i)
+			if(((volume+1)/VOLUME_STEP)>i)
 			{
-				if(((vol_value-1)==i)&&(vol_value%2))
-				{
-					LCD_DisplayCBD(DEF_SERECTANLG,i/2,1);
-				}
-				else
-				{
-					LCD_DisplayCBD(DEF_SFRECTANGLE,i/2,1);
-				}
+				LCD_DisplayCBD(DEF_SFRECTANGLE,i,1);
 			}
+			else
+			{
+				LCD_DisplayCBD(DEF_SERECTANLG,i,1);	
+			}			
 		}
-
 		ret = AudioLevel(volume);
 	}
     //Removing this call as it causes inadvertant exits while in the volume menu

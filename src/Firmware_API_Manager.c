@@ -1521,7 +1521,19 @@ RETURN_CODE _return_service_string_info_from_service_list(uint8_t service_index,
 		if(ret == SUCCESS)
 		{
 			//There is only one component for this service or the component info did not exist - just show the service info.
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+			if(svcListDAB.PRUNE_COUNT[service_index] > DAB_SERVICE_LIST__FLAG_MASK)
+			{
+				service_name[0]='?';
+				CpyMemory(&service_name[1], tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
+			}
+			else
+			{
+				CpyMemory(service_name, tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
+			}
+#else
 			CpyMemory(service_name, tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
+#endif
 			*service_name_encoding = tempListElement.SERVICE_NAME_ENCODING;				
 			*service_pty = tempListElement.SERVICE_PTY;
 		}
@@ -2613,10 +2625,15 @@ RETURN_CODE ScanBand_DAB()
     uint8_t freqIndex;
 	dab_get_freq_list__data dgfl;
 
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+	svcListDAB.SCAN_FLAG = 1;
+#endif
+
     _DAB_scan_continue = 1;
     _DAB_service_lost = 0; //We dont want to keep trying to reacuire after the user has selected a new service
+
     initDAB_ServiceList(); // Clear the service list
-	
+
 #ifdef OPTION__DAB_SERVICE_LIST_PERSISTENCE
     EraseServiceList_DAB();
 #endif // OPTION__DAB_SERVICE_LIST_PERSISTENCE
@@ -2637,6 +2654,10 @@ RETURN_CODE ScanBand_DAB()
 
 		ret = SUCCESS;
 	}
+
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+	svcListDAB.SCAN_FLAG = 0;
+#endif
 
     CALLBACK_Updated_Data(DAB_TUNE_SCAN_PROCESS_COMPLETE);
 
