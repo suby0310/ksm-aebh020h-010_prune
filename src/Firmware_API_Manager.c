@@ -1302,8 +1302,11 @@ RETURN_CODE _DAB_start_service_from_list(uint8_t servicelistIndex)
 
     uint8_t i,j,k=0;
 
-
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    if((svcListDAB.SERVICE_COUNT > 0) && (servicelistIndex < svcListDAB.TOTAL_SERVICE_COUNT))
+#else
     if((svcListDAB.SERVICE_COUNT > 0) && (servicelistIndex < svcListDAB.SERVICE_COUNT))
+#endif
     {
         _service_following_enabled = 0; //We want to disable service following while we are dealing with starting services
 		ret = getServiceListElement(svcListDAB.SERVICE_OFFSETS[servicelistIndex], &masterListElement);
@@ -1514,14 +1517,14 @@ RETURN_CODE _return_service_string_info_from_service_list(uint8_t service_index,
     *service_name_encoding = 0;
     *service_pty = 0;
 
-    if(service_index < svcListDAB.SERVICE_COUNT)
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    if(service_index < svcListDAB.TOTAL_SERVICE_COUNT)
     {
 		ret = getServiceListElement(svcListDAB.SERVICE_OFFSETS[service_index], &tempListElement);
 
 		if(ret == SUCCESS)
 		{
 			//There is only one component for this service or the component info did not exist - just show the service info.
-#ifdef OPTION__DAB_FUNCTION_PRUNE
 			if(svcListDAB.PRUNE_COUNT[service_index] > DAB_SERVICE_LIST__FLAG_MASK)
 			{
 				service_name[0]='?';
@@ -1531,9 +1534,7 @@ RETURN_CODE _return_service_string_info_from_service_list(uint8_t service_index,
 			{
 				CpyMemory(service_name, tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
 			}
-#else
-			CpyMemory(service_name, tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
-#endif
+
 			*service_name_encoding = tempListElement.SERVICE_NAME_ENCODING;				
 			*service_pty = tempListElement.SERVICE_PTY;
 		}
@@ -1542,6 +1543,25 @@ RETURN_CODE _return_service_string_info_from_service_list(uint8_t service_index,
 	{
 		return INVALID_INPUT;
 	}
+#else
+    if(service_index < svcListDAB.SERVICE_COUNT)
+    {
+		ret = getServiceListElement(svcListDAB.SERVICE_OFFSETS[service_index], &tempListElement);
+
+		if(ret == SUCCESS)
+		{
+			//There is only one component for this service or the component info did not exist - just show the service info.
+			CpyMemory(service_name, tempListElement.SERVICE_NAME, DAB_SERVICE_LIST_SERVICE_LABEL__SIZE);
+
+			*service_name_encoding = tempListElement.SERVICE_NAME_ENCODING;				
+			*service_pty = tempListElement.SERVICE_PTY;
+		}
+    }
+	else
+	{
+		return INVALID_INPUT;
+	}
+#endif
 
 	return ret;
 }
@@ -1675,7 +1695,11 @@ RETURN_CODE _update_DAB_service_following_worker()
     {
         j = 0;
         serviceOffset = svcListDAB.ENSEMBLE_OFFSETS[ensembleAddressIndex];
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+        while((serviceOffset / sizeof(dab_service_list_element) < svcListDAB.TOTAL_SERVICE_COUNT))
+#else
         while((serviceOffset / sizeof(dab_service_list_element) < svcListDAB.SERVICE_COUNT))
+#endif
         {
             serviceOffset += (sizeof(dab_service_list_element) * j++);
             ret = getServiceListElement(serviceOffset, &tempListElement);
@@ -2626,7 +2650,9 @@ RETURN_CODE ScanBand_DAB()
 	dab_get_freq_list__data dgfl;
 
 #ifdef OPTION__DAB_FUNCTION_PRUNE
-	svcListDAB.SCAN_FLAG = 1;
+	uint8_t index;
+
+	svcListDAB.PRUNE_FLAG |= DAB_PRUNE__SCAN_FLAG;
 #endif
 
     _DAB_scan_continue = 1;
@@ -2656,7 +2682,15 @@ RETURN_CODE ScanBand_DAB()
 	}
 
 #ifdef OPTION__DAB_FUNCTION_PRUNE
-	svcListDAB.SCAN_FLAG = 0;
+	for(index = 0; index < DAB_SERVICE_LIST__MAX_SERVICES; index++)
+	{
+		if(svcListDAB.PRUNE_COUNT[index] >= DAB_SERVICE_LIST__FLAG_MASK)
+		{
+			svcListDAB.TOTAL_SERVICE_COUNT++;
+		}
+	}
+
+	svcListDAB.PRUNE_FLAG &= ~DAB_PRUNE__SCAN_FLAG;
 #endif
 
     CALLBACK_Updated_Data(DAB_TUNE_SCAN_PROCESS_COMPLETE);
@@ -2683,7 +2717,11 @@ RETURN_CODE ReacquireCurrentService_DAB()
 {
     RETURN_CODE ret = 0;
     uint8_t serviceIndex;
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    if((_DAB_service_lost == 1) && ((_current_dab_metrics.CURRENT_AUDIO_SERVICE_LIST__SERVICE_INDEX < svcListDAB.TOTAL_SERVICE_COUNT) || (_current_dab_metrics.CURRENT_AUDIO_SERVICE_LIST__SERVICE_INDEX == 0xFF)))
+#else
     if((_DAB_service_lost == 1) && ((_current_dab_metrics.CURRENT_AUDIO_SERVICE_LIST__SERVICE_INDEX < svcListDAB.SERVICE_COUNT) || (_current_dab_metrics.CURRENT_AUDIO_SERVICE_LIST__SERVICE_INDEX == 0xFF)))
+#endif
     {
         ret = findServiceInList(_current_audio_service_id, (uint16_t)_current_audio_component_id, 0, 0, 0, &serviceIndex);
 
@@ -2713,7 +2751,11 @@ void _dab_browse_step_up_down_worker(uint8_t stepup)
 {
     if(stepup == 0)
 	{
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+		if(_DAB_current_browse_service_index < (svcListDAB.TOTAL_SERVICE_COUNT - 1))
+#else
 		if(_DAB_current_browse_service_index < (svcListDAB.SERVICE_COUNT - 1))
+#endif
 		{
 			// Not at the end of the list - move service index up
 			_DAB_current_browse_service_index ++;
@@ -2734,7 +2776,11 @@ void _dab_browse_step_up_down_worker(uint8_t stepup)
 		else
 		{
 			//We have reached the end of the list - wrap to top
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+			_DAB_current_browse_service_index = (svcListDAB.TOTAL_SERVICE_COUNT - 1);
+#else
 			_DAB_current_browse_service_index = (svcListDAB.SERVICE_COUNT - 1);
+#endif
 		}
 	}
 }
@@ -2750,7 +2796,11 @@ RETURN_CODE BrowseServicesChangeSelection_DAB(uint8_t stepup, uint8_t* service_n
 	{
 		case dab:
 		case dmb:
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+			if(svcListDAB.TOTAL_SERVICE_COUNT > 0)
+#else
 			if(svcListDAB.SERVICE_COUNT > 0)
+#endif
 			{
 				if(_DAB_current_browse_service_index == DAB_METRIC_AUDIO_SERVICE_LIST__INDEX_NOT_SET)
 				{
@@ -2809,8 +2859,13 @@ RETURN_CODE BrowseServicesStartCurrentSelection_DAB()
 {
     RETURN_CODE ret = 0;
 
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    if((_DAB_current_browse_service_index == DAB_METRIC_AUDIO_SERVICE_LIST__INDEX_NOT_SET) && 
+                    (svcListDAB.TOTAL_SERVICE_COUNT > 0))
+#else
     if((_DAB_current_browse_service_index == DAB_METRIC_AUDIO_SERVICE_LIST__INDEX_NOT_SET) && 
                     (svcListDAB.SERVICE_COUNT > 0))
+#endif
     {
         _DAB_current_browse_service_index = 0; 
     }
@@ -2861,7 +2916,11 @@ void FavoritesBrowseOnly_DAB(uint8_t enable)
 
 uint8_t FavoritesIsCurrentServiceAFavorite_DAB()
 {
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+	if(svcListDAB.TOTAL_SERVICE_COUNT > 0)
+#else
     if(svcListDAB.SERVICE_COUNT > 0)
+#endif
     {
         return svcListDAB.SERVICE_FAVORITES[_DAB_current_browse_service_index];
     }
@@ -2891,7 +2950,11 @@ RETURN_CODE SaveServiceList_DAB()
     currentAddrStorage += sizeof(dab_service_list);
 
     //Store the current services in persistent storage
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    for(serviceIndex = 0; serviceIndex < svcListDAB.TOTAL_SERVICE_COUNT; serviceIndex++)
+#else
     for(serviceIndex = 0; serviceIndex < svcListDAB.SERVICE_COUNT; serviceIndex++)
+#endif
     {
         ret = getServiceListElement(currentAddrRAM, &currentService);
         ret |= writePersistentStorage(currentAddrStorage, sizeof(dab_service_list_element), (uint8_t*)&currentService);
@@ -2941,7 +3004,11 @@ RETURN_CODE LoadServiceList_DAB(uint8_t* lastPlayedIndex)
     currentAddrStorage += sizeof(dab_service_list);
 
     //replace the current services in radio RAM
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+    for(serviceIndex = 0; serviceIndex < svcListDAB.TOTAL_SERVICE_COUNT; serviceIndex++)
+#else
     for(serviceIndex = 0; serviceIndex < svcListDAB.SERVICE_COUNT; serviceIndex++)
+#endif
     {
         ret |= readPersistentStorage(currentAddrStorage, sizeof(dab_service_list_element), (uint8_t*)&currentService);
         if((ret == SUCCESS) && (currentService.SERVICE_ID != 0))

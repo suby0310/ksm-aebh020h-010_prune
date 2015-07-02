@@ -128,50 +128,118 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>3290</LineNumber>
+          <LineNumber>2681</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>-16721951</Address>
+          <Address>-16726371</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>D:\1_Data\1_업무\2_Si468x\1_Code_Si468x\KSM_AEBH020H_010(20150608_Ref)\ksm-aebh020h-010_prune\src\mode_common.c</Filename>
+          <Filename>src\Firmware_API_Manager.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\unnamed\MODE_COMMON\3290</Expression>
+          <Expression>\\unnamed\FIRMWARE_API_MANAGER\2681</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>1010</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>-16771139</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>src\DAB_Service_List_Handler.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\unnamed\DAB_SERVICE_LIST_HANDLER\1010</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>820</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>-16771987</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>src\DAB_Service_List_Handler.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\unnamed\DAB_SERVICE_LIST_HANDLER\820</Expression>
+        </Bp>
+        <Bp>
+          <Number>3</Number>
+          <Type>0</Type>
+          <LineNumber>855</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>-16771786</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>src\DAB_Service_List_Handler.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\unnamed\DAB_SERVICE_LIST_HANDLER\855</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>svcListDAB</ItemText>
+          <ItemText>tempElement</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>dgfl.NUM_FREQS,0x0A</ItemText>
+          <ItemText>currentIndex</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>replyData</ItemText>
+          <ItemText>serviceIndex</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>gdsl</ItemText>
+          <ItemText>serviceNum</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>1</WinNumber>
-          <ItemText>dges</ItemText>
+          <ItemText>finder</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
           <WinNumber>1</WinNumber>
           <ItemText>svcListDAB</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>service_name</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>service_name_encoding</ItemText>
+        </Ww>
+        <Ww>
+          <count>8</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>_DAB_current_browse_service_index</ItemText>
+        </Ww>
+        <Ww>
+          <count>9</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tempElement</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

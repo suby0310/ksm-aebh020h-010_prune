@@ -41,12 +41,12 @@ RETURN_CODE clock_initialize(void)
 	time_refresh_item = 0x7F;
 	time_sec_flag = 1;
 	time_dot_flag = 1;
-	time.sec = 7;
-	time.min = 55;
-	time.hour = 5;
-	time.day = 29;
-	time.week = 1;
-	time.month = 6;
+	time.sec = 1;
+	time.min = 30;
+	time.hour = 6;
+	time.day = 2;
+	time.week = 4;
+	time.month = 7;
 	time.year = 115;
 	
 	select_item = 0;

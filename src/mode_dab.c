@@ -95,7 +95,11 @@ RETURN_CODE DAB_scan(void)
 	ScanBand_DAB();
 	dab_scan_flag = 0;
 
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+	if(DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT>0)
+#else
 	if(DABServiceListAudioPtr()->SERVICE_COUNT>0)
+#endif
 	{
 		CALLBACK_Updated_Data(DAB_TUNE_REQUIRED_UPDATE);
 		ret |= BrowseServicesStartCurrentSelection_DAB();

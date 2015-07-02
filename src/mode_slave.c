@@ -1016,11 +1016,19 @@ void slave_command_dispatch(u8 *uart_cmd)
 				CTS = 1;
 				ERR = 0;
 				uart0_tx_buf[0] = (CTS<<7|ERR<<6);
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+				uart0_tx_buf[1] = DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT;
+#else
 				uart0_tx_buf[1] = DABServiceListAudioPtr()->SERVICE_COUNT;
+#endif
 				index = 2;
 				break;
 		case DAB_START_SERVICE_ID_SLA_CMD://534c4102630166
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+				if(uart_cmd[1]>=DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT)
+#else
 				if(uart_cmd[1]>=DABServiceListAudioPtr()->SERVICE_COUNT)
+#endif
 				{
 					CTS = 1;
 					ERR = 1;

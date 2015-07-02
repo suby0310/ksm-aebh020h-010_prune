@@ -458,12 +458,20 @@ firmware_loop:
 #ifdef OPTION__INCLUDE_MODE__DAB					
 			case CMD_GET_SERVICE_ID_DAB://4154530307000a
 				uart0_tx_buf[0] = RSP_GET_SERVICE_ID_DAB;
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+				uart0_tx_buf[1] = DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT;
+#else
 				uart0_tx_buf[1] = DABServiceListAudioPtr()->SERVICE_COUNT;
+#endif
 				uart0_tx_num = 2;
 
 				break;
 			case CMD_TUNE_DAB_ID://4154530308010c
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+				if(uart0_rx_buf[5]>=DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT)
+#else
 				if(uart0_rx_buf[5]>=DABServiceListAudioPtr()->SERVICE_COUNT)
+#endif
 				{
 					uart0_tx_buf[0] = RSP_TUNE_DAB_ID;
 					uart0_tx_buf[1] = 0x01;

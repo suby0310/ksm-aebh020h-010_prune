@@ -225,11 +225,14 @@ void CALLBACK_Updated_Data(SDK_CALLBACKS_UPDATED_DATA_TYPE updatedType)
 #endif //OPTION__OPERATE_AS_SLAVE_NO_MMI
 			break;
         case DAB_TUNE_REQUIRED_UPDATE:
-
 #ifndef OPTION__OPERATE_AS_SLAVE_NO_MMI
             LCD_Clear(LCD_CLEAR_ALL);
     		LCD_DisplayStr("Tuning...\n",0,0);
     		LCD_DisplayStr("Please wait\n",0,1);
+
+#ifdef OPTION__DAB_FUNCTION_PRUNE
+			LCD_DisplayNum(DABServiceListAudioPtr()->TOTAL_SERVICE_COUNT,13,0);
+#endif
 #endif //OPTION__OPERATE_AS_SLAVE_NO_MMI
 
             break;

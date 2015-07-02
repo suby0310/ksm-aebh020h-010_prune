@@ -144,20 +144,29 @@ void initDAB_ServiceList(void)
 #ifdef OPTION__DAB_FUNCTION_PRUNE
 	for(index = 0; index < DAB_SERVICE_LIST__MAX_SERVICES; index++)
 	{
-		ret = getServiceListElement(index * sizeof(dab_service_list_element), &tempElement);
-
-		if((ret == SUCCESS) && (tempElement.PRUNE_COUNT >= DAB_SERVICE_LIST__FLAG_MASK))
+		if((svcListDAB.PRUNE_FLAG & DAB_PRUNE__RESET_FLAG) == 0)
 		{
-			svcListDAB.PRUNE_COUNT[index] = tempElement.PRUNE_COUNT;
+			ret = getServiceListElement(index * sizeof(dab_service_list_element), &tempElement);
 
-			if((0x80 <= svcListDAB.PRUNE_COUNT[index]) && (svcListDAB.PRUNE_COUNT[index] < 0xFF))
+			if((ret == SUCCESS) && (tempElement.PRUNE_COUNT >= DAB_SERVICE_LIST__FLAG_MASK))
 			{
-				svcListDAB.PRUNE_COUNT[index]++;
-			}
+				svcListDAB.PRUNE_COUNT[index] = tempElement.PRUNE_COUNT;
 
-			svcListDAB.FREQUENCY_INDEX[index] = tempElement.FREQUENCY_INDEX;
-			svcListDAB.SERVICE_ID[index] = tempElement.SERVICE_ID;
-			svcListDAB.SERVICE_OFFSETS[index] = index * sizeof(dab_service_list_element);
+				if((0x80 <= svcListDAB.PRUNE_COUNT[index]) && (svcListDAB.PRUNE_COUNT[index] < 0xFF))
+				{
+					svcListDAB.PRUNE_COUNT[index]++;
+				}
+
+				svcListDAB.FREQUENCY_INDEX[index] = tempElement.FREQUENCY_INDEX;
+				svcListDAB.SERVICE_ID[index] = tempElement.SERVICE_ID;
+				svcListDAB.SERVICE_OFFSETS[index] = index * sizeof(dab_service_list_element);
+			}
+			else
+			{
+				svcListDAB.PRUNE_COUNT[index] = 0;
+				svcListDAB.FREQUENCY_INDEX[index] = 0xFF;
+				svcListDAB.SERVICE_ID[index] = 0;
+			}
 		}
 		else
 		{
@@ -165,6 +174,13 @@ void initDAB_ServiceList(void)
 			svcListDAB.FREQUENCY_INDEX[index] = 0xFF;
 			svcListDAB.SERVICE_ID[index] = 0;
 		}
+	}
+
+	svcListDAB.TOTAL_SERVICE_COUNT = 0;
+
+	if((svcListDAB.PRUNE_FLAG & DAB_PRUNE__RESET_FLAG) != 0)
+	{
+		svcListDAB.PRUNE_FLAG &= ~DAB_PRUNE__RESET_FLAG;
 	}
 #endif
 
@@ -441,9 +457,6 @@ RETURN_CODE _repack_stored_dab_list(uint8_t ensembleOffsetIndex)
     }
     else
     {
-//#ifdef OPTION__DAB_FUNCTION_PRUNE
-//		_current_service_list_buffer_end_as_offset = find_empty_buffer(tempElement.FREQUENCY_INDEX) * sizeof(dab_service_list_element);
-//#endif
         removedServiceCount = ((_current_service_list_buffer_end_as_offset - svcListDAB.ENSEMBLE_OFFSETS[ensembleOffsetIndex]) / sizeof(dab_service_list_element));
         _current_service_list_buffer_end_as_offset = svcListDAB.ENSEMBLE_OFFSETS[ensembleOffsetIndex];
     }
@@ -527,8 +540,10 @@ RETURN_CODE _repack_stored_dab_list(uint8_t ensembleOffsetIndex)
         }
     }
 
+#ifndef OPTION__DAB_FUNCTION_PRUNE
     //Correct the service indexes by resorting
     ret |= _insertion_sort_alphabetical_list(0);
+#endif
 
 	return ret;
 }
@@ -574,9 +589,9 @@ void _error_in_list(uint16_t listVer)
 }
 
 #ifdef OPTION__DAB_FUNCTION_PRUNE
-uint8_t find_empty_buffer(uint8_t frequencyIndex)
+uint8_t _make_empty_buffer(uint8_t frequencyIndex)
 {
-	uint8_t startIndex, endIndex, index;
+	uint8_t startIndex, endIndex, ensembleIndex, serviceIndex;
 	dab_service_list_element tempElement;
 
 	for(startIndex = 0; startIndex < DAB_SERVICE_LIST__MAX_SERVICES; startIndex++)
@@ -595,21 +610,29 @@ uint8_t find_empty_buffer(uint8_t frequencyIndex)
 		}
 	}
 
-	for(index = endIndex;  index >= startIndex + 1; index--)
+	for(serviceIndex = endIndex;  serviceIndex >= startIndex + 1; serviceIndex--)
 	{
-		getServiceListElement((index - 1) * sizeof(dab_service_list_element), &tempElement);
+		getServiceListElement((serviceIndex - 1) * sizeof(dab_service_list_element), &tempElement);
 
-		_current_service_list_buffer_end_as_offset = index * sizeof(dab_service_list_element);
+		_current_service_list_buffer_end_as_offset = serviceIndex * sizeof(dab_service_list_element);
 		_add_data_to_buffer(&tempElement);
 
-	    svcListDAB.SERVICE_OFFSETS[index] = svcListDAB.SERVICE_OFFSETS[index - 1];
-	    svcListDAB.SERVICE_NAME_CHAR0[index] = svcListDAB.SERVICE_NAME_CHAR0[index - 1];
+	    svcListDAB.SERVICE_OFFSETS[serviceIndex] = _current_service_list_buffer_end_as_offset;
+	    svcListDAB.SERVICE_NAME_CHAR0[serviceIndex] = svcListDAB.SERVICE_NAME_CHAR0[serviceIndex - 1];
 #ifdef OPTION__DAB_PRESETS_AS_FAVORITES
-	    svcListDAB.SERVICE_FAVORITES[index] = svcListDAB.SERVICE_FAVORITES[index - 1];
+	    svcListDAB.SERVICE_FAVORITES[serviceIndex] = svcListDAB.SERVICE_FAVORITES[serviceIndex - 1];
 #endif
-		svcListDAB.FREQUENCY_INDEX[index] = svcListDAB.FREQUENCY_INDEX[index - 1];
-		svcListDAB.PRUNE_COUNT[index] = svcListDAB.PRUNE_COUNT[index - 1];
-		svcListDAB.SERVICE_ID[index] = svcListDAB.SERVICE_ID[index - 1];
+		svcListDAB.FREQUENCY_INDEX[serviceIndex] = svcListDAB.FREQUENCY_INDEX[serviceIndex - 1];
+		svcListDAB.PRUNE_COUNT[serviceIndex] = svcListDAB.PRUNE_COUNT[serviceIndex - 1];
+		svcListDAB.SERVICE_ID[serviceIndex] = svcListDAB.SERVICE_ID[serviceIndex - 1];
+	}
+
+	for(ensembleIndex = 0; ensembleIndex < DAB_SERVICE_LIST__MAX_ENSEMBLES_FOR_LIST; ensembleIndex++)
+	{
+		if(startIndex * sizeof(dab_service_list_element) <= svcListDAB.ENSEMBLE_OFFSETS[ensembleIndex])
+		{
+			svcListDAB.ENSEMBLE_OFFSETS[ensembleIndex] = svcListDAB.ENSEMBLE_OFFSETS[ensembleIndex] + sizeof(dab_service_list_element);
+		}
 	}
 
 	return startIndex;
@@ -683,7 +706,7 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
 	{
 		if(svcListDAB.FREQUENCY_INDEX[serviceIndex] == MetricsGetDABPtr()->FREQUENCY_INDEX)
 		{
-			if((svcListDAB.SCAN_FLAG == 0) && (svcListDAB.SERVICE_COUNT != 0))
+			if(((svcListDAB.PRUNE_FLAG & DAB_PRUNE__SCAN_FLAG) == 0) && (svcListDAB.SERVICE_COUNT != 0))
 			{
 				svcListDAB.SERVICE_COUNT--;
 			}
@@ -772,10 +795,9 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
                         //This is an audio component without conditional access - add it to the list.
                         tempBufferEnd = _current_service_list_buffer_end_as_offset;
 
-                        if(svcListDAB.SERVICE_COUNT < DAB_SERVICE_LIST__MAX_SERVICES)
-                        {
-
 #ifdef OPTION__DAB_FUNCTION_PRUNE
+                        if(svcListDAB.TOTAL_SERVICE_COUNT < DAB_SERVICE_LIST__MAX_SERVICES)
+                        {
 							for(serviceIndex = 0, finder = 0; serviceIndex < DAB_SERVICE_LIST__MAX_SERVICES; serviceIndex++)
 							{
 								if(svcListDAB.FREQUENCY_INDEX[serviceIndex] == MetricsGetDABPtr()->FREQUENCY_INDEX)
@@ -799,7 +821,7 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
 
 							if(finder == 0)	// New service
 							{
-								currentIndex = find_empty_buffer(tempElement.FREQUENCY_INDEX);
+								currentIndex = _make_empty_buffer(tempElement.FREQUENCY_INDEX);
 
 								_current_service_list_buffer_end_as_offset = currentIndex * sizeof(dab_service_list_element);
 
@@ -829,6 +851,11 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
 									svcListDAB.SERVICE_ID[currentIndex] = tempElement.SERVICE_ID;
 
 								    svcListDAB.SERVICE_COUNT++;
+
+									if((svcListDAB.PRUNE_FLAG & DAB_PRUNE__SCAN_FLAG) == 0)
+									{
+										svcListDAB.TOTAL_SERVICE_COUNT++;
+									}
 								}
 							}
 							else	// Existent service
@@ -853,7 +880,16 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
 									svcListDAB.SERVICE_COUNT++;
 								}
 							}
+                        }
+                        else
+                        {
+							svcListDAB.PRUNE_FLAG |= DAB_PRUNE__RESET_FLAG;
+
+                            CALLBACK_Updated_Data(SERVICE_LIST_BUFFER_FULL_ERROR);
+                        }
 #else
+                        if(svcListDAB.SERVICE_COUNT < DAB_SERVICE_LIST__MAX_SERVICES)
+                        {
                             //Write the service info to the service list
                             if(_add_data_to_buffer(&tempElement) != SUCCESS)
                             {
@@ -875,12 +911,12 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
                                     firstService = 1;
                                 }
                             }
-#endif
                         }
                         else
                         {
                             CALLBACK_Updated_Data(SERVICE_LIST_BUFFER_FULL_ERROR);
                         }
+#endif
                     }
 
                     slAddr += DAB_COMPONENT_LIST_COMPONENT_DATA__LENGTH;
@@ -967,8 +1003,8 @@ void updateDAB_ServiceList(get_digital_service_list__data* dabList, uint16_t lis
             //Sort the list
 #ifndef OPTION__DAB_FUNCTION_PRUNE
             svcListDAB.ENSEMBLE_OFFSETS[svcListDAB.ENSEMBLE_COUNT] = _current_service_list_buffer_end_as_offset;
-#endif
             ret |= _insertion_sort_alphabetical_list(initialServiceCount);
+#endif
 
             //Tell the MMI we have a new service list with the new list
             CALLBACK_Updated_Data(UPDATED_SERVICE_LIST_DAB);
